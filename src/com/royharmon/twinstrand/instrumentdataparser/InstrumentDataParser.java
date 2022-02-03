@@ -62,7 +62,7 @@ public class InstrumentDataParser {
 		// Create a unified list of directories from the input provided.
 		List<String> folderList = combineFolderLists(parms);
 		// Use the DataMonitor class to register a WatchService for all of the folder paths.
-		// TODO: Create an instance of the DataMonitor class.
+		DataMonitor.main(folderList.toArray(new String[0]));
 	}
 	
 	

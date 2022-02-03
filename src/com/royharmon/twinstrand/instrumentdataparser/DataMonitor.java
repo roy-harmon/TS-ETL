@@ -10,6 +10,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
@@ -25,17 +26,11 @@ import java.util.Map;
  * @author Roy
  *
  */
-class DataMonitor implements Runnable {
-	DataMonitor(String folderPath){
-		
-	}
-	
+class DataMonitor {
+
 	private static WatchService watcher;
-    private final static Map<WatchKey,Path> keys = new HashMap<WatchKey,Path>();
-    
-	public void run() {
-		
-	}
+    private static final Map<WatchKey,Path> keys = new HashMap<>();
+    private static IDataAdapter dataAdapter = new SQLiteDataAdapter();
 	
 	private static int processFile(String filePath) {
 		List<List<String>> result = new ArrayList<>();
@@ -50,7 +45,7 @@ class DataMonitor implements Runnable {
 					sql1.append(", ");
 					sql2.append(", ");
 				}
-				sql1.append(field);
+				sql1.append("'" + field + "'");
 				sql2.append("?");
 			}
 			sql1.append(", SourceFile");
@@ -58,7 +53,10 @@ class DataMonitor implements Runnable {
 			String line;
 			while ((line = reader.readLine()) != null) {
 				String[] values = line.split(",");
-				List<String> resultValues = Arrays.asList(values);
+				List<String> resultValues = new ArrayList<>(Arrays.asList(values));
+				for (int i = resultValues.size(); i < firstLine.length; i++) {
+					resultValues.add(i, "");
+				}
 				resultValues.add(filePath);
 				result.add(resultValues);
 			}
@@ -71,15 +69,14 @@ class DataMonitor implements Runnable {
 	}
 	
 	private static int insertRecords(String sql, List<List<String>> records) {
-		
-		return 1;
+		String currentPath = Paths.get("").toAbsolutePath().toString();
+		return dataAdapter.insertRecords(sql, records, currentPath + "\\Results.db");
 	}
 	
 	public static void main(String[] args) {
 		try {
 			watcher = FileSystems.getDefault().newWatchService();
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		for (String arg : args) {
@@ -88,7 +85,6 @@ class DataMonitor implements Runnable {
 				WatchKey key = dir.register(watcher, ENTRY_CREATE);	
 				keys.put(key, dir);
 			} catch (InvalidPathException | IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -120,16 +116,23 @@ class DataMonitor implements Runnable {
 				// Resolve path against the directory.
 				Path child = dir.resolve(filePath);
 				try {
-					if (Files.probeContentType(child).equals("text/plain")) {
+					String fileContentType = Files.probeContentType(child);
+					switch (fileContentType) {
+					case "text/plain":
+					case "application/vnd.ms-excel":
+					case "text/csv":
+					case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
 						// Insert new file data into database.
 						int fileRecords = processFile(child.toString());
 						// Do something with the number of records processed?
-						System.out.println(String.format("Processed %d records from %s.", fileRecords, child.toString()));
+						System.out.println(String.format("Processed %d records from '%s'.", fileRecords, child.toString()));
+						break;
+					default:
+						break;
 					}
 				} catch (IOException e) {
 					// Should probably log this somehow.
 					e.printStackTrace();
-					continue;
 				}
 			}
 			// Reset the key! Invalid key means inaccessible directory; exit loop.
