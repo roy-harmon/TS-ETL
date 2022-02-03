@@ -53,11 +53,14 @@ class DataMonitor implements Runnable {
 				sql1.append(field);
 				sql2.append("?");
 			}
-			sql2.append(")");
+			sql1.append(", SourceFile");
+			sql2.append(", ?)");
 			String line;
 			while ((line = reader.readLine()) != null) {
 				String[] values = line.split(",");
-				result.add(Arrays.asList(values));
+				List<String> resultValues = Arrays.asList(values);
+				resultValues.add(filePath);
+				result.add(resultValues);
 			}
 		} catch (IOException e) {
 			// Surely this would have been handled already, right?
