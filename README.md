@@ -1,4 +1,4 @@
-# TwinStrandETL
+# TS-ETL
 A Java command line tool (CLI) that can watch for, extract, transform, and load tabular data discovered in a filesystem folder into a relational database (e.g. SQLite).
 
 ## The Assignment
