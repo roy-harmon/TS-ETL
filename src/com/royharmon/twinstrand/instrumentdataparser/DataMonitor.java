@@ -23,7 +23,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author Roy
+ * The DataMonitor class registers event watchers for the given directories, 
+ * and when a new CSV file is created, its contents are inserted into the Results
+ * table of the Results.db database file (which is created if it doesn't exist). 
+ * 
+ * @author Roy Harmon
+ * @version 1.0
+ * @since 2022-02-02
  *
  */
 class DataMonitor {
@@ -31,6 +37,9 @@ class DataMonitor {
 	private static WatchService watcher;
     private static final Map<WatchKey,Path> keys = new HashMap<>();
     private static IDataAdapter dataAdapter = new SQLiteDataAdapter();
+    
+    // To specify a different database file location, provide a different value for dbfile.
+    private static String dbfile = Paths.get("").toAbsolutePath().toString() + "\\Results.db";
 	
 	private static int processFile(String filePath) {
 		List<List<String>> result = new ArrayList<>();
@@ -69,8 +78,7 @@ class DataMonitor {
 	}
 	
 	private static int insertRecords(String sql, List<List<String>> records) {
-		String currentPath = Paths.get("").toAbsolutePath().toString();
-		return dataAdapter.insertRecords(sql, records, currentPath + "\\Results.db");
+		return dataAdapter.insertRecords(sql, records, dbfile);
 	}
 	
 	public static void main(String[] args) {
@@ -113,15 +121,12 @@ class DataMonitor {
 				// Get filename from event context.
 				WatchEvent<Path> evPath = (WatchEvent<Path>)event;
 				Path filePath = evPath.context();
-				// Resolve path against the directory.
+				// Resolve full path of the file in the directory.
 				Path child = dir.resolve(filePath);
 				try {
 					String fileContentType = Files.probeContentType(child);
 					switch (fileContentType) {
-					case "text/plain":
-					case "application/vnd.ms-excel":
-					case "text/csv":
-					case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+					case "text/plain", "application/vnd.ms-excel", "text/csv", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
 						// Insert new file data into database.
 						int fileRecords = processFile(child.toString());
 						// Do something with the number of records processed?

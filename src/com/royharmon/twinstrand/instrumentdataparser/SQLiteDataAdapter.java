@@ -11,7 +11,11 @@ import java.sql.Statement;
 import java.util.List;
 
 /**
- * @author Roy
+ * The SQLiteDataAdapter provides methods for inserting files into a SQLite database file.
+ * 
+ * @author Roy Harmon
+ * @version 1.0
+ * @since	2022-02-03
  *
  */
 public class SQLiteDataAdapter implements IDataAdapter {

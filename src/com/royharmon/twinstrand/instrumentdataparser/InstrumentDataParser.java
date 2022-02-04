@@ -15,7 +15,10 @@ import java.util.logging.Logger;
 /**
  * The InstrumentDataParser is a CLI tool that accepts a list of directories to monitor 
  * for new CSV files. When such a file is found, its data is extracted and loaded into 
- * the relational database defined by the connection string in the configuration file.
+ * a relational database. 
+ * The InstrumentDataParser class accepts directories as command-line arguments and passes
+ * the full list of directories to the DataMonitor that watches those directories for new
+ * files. When those files are found, the data is extracted and inserted into a database.
  * 
  * @author Roy Harmon
  * @version 1.0
